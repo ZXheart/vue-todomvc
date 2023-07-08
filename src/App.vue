@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watchEffect } from 'vue'
 
+// ! define states
 const STORAGE_KEY = 'vue-todoS'
 const todoS = ref(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
 const visibility = ref('all')
@@ -13,9 +14,9 @@ const filters = {
 const filteredTodoS = computed(() => filters[visibility.value](todoS.value))
 const remaining = computed(() => filters.active(todoS.value).length)
 
+// ! watch hash changes
 function onHashChange() {
   const route = window.location.hash.replace(/#\/?/, '')
-  console.log(route)
   if (filters[route]) {
     visibility.value = route
   } else {
@@ -26,12 +27,12 @@ function onHashChange() {
 window.addEventListener('hashchange', onHashChange)
 onHashChange()
 
+// ! data persistence
 watchEffect(() => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todoS.value))
 })
-function toggleAll(e) {
-  todoS.value.forEach(item => item.completed = e.target.checked)
-}
+
+// ! todo(s) events
 function addTodo(e) {
   const value = e.target.value.trim()
   if (value) {
@@ -43,18 +44,16 @@ function addTodo(e) {
     e.target.value = ''
   }
 }
-function removeTodo(todo) {
-  todoS.value.splice(todoS.value.indexOf(todo), 1)
+function toggleAll(e) {
+  todoS.value.forEach(item => item.completed = e.target.checked)
 }
-
 let beforeEditCache = ''
 function editTodo(todo) {
   beforeEditCache = todo.title
   editedTodo.value = todo
 }
-function cancelEdit(todo) {
-  editedTodo.value = null
-  todo.title = beforeEditCache
+function removeTodo(todo) {
+  todoS.value.splice(todoS.value.indexOf(todo), 1)
 }
 function doneEdit(todo) {
   if (editedTodo.value) {
@@ -63,8 +62,16 @@ function doneEdit(todo) {
     if (!todo.title) removeTodo(todo)
   }
 }
+function cancelEdit(todo) {
+  editedTodo.value = null
+  todo.title = beforeEditCache
+}
 function removeCompleted() {
   todoS.value = filters.active(todoS.value)
+}
+// ! custom directives
+const vEditingFocus = {
+  mounted: el => el.focus()
 }
 </script>
 
@@ -86,9 +93,8 @@ function removeCompleted() {
           <label @dblclick="editTodo(todo)">{{ todo.title }}</label>
           <button class="destroy" @click="removeTodo(todo)"></button>
         </div>
-        <input type="text" v-if="todo === editedTodo" class="edit" v-model="todo.title"
-          @vue:mounted="({ el }) => el.focus()" @blur="doneEdit(todo)" @keyup.enter="doneEdit(todo)"
-          @keyup.escape="cancelEdit(todo)">
+        <input type="text" v-if="todo === editedTodo" class="edit" v-model="todo.title" v-editing-focus
+          @blur="doneEdit(todo)" @keyup.enter="doneEdit(todo)" @keyup.escape="cancelEdit(todo)">
       </li>
     </ul>
   </section>
@@ -312,13 +318,13 @@ body {
 		Firefox requires `#` to be escaped - https://bugzilla.mozilla.org/show_bug.cgi?id=922433
 		IE and Edge requires *everything* to be escaped to render, so we do that instead of just the `#` - https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/7157459/
 	*/
-  background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%23949494%22%20stroke-width%3D%223%22/%3E%3C/svg%3E');
+  background-image: url('./assets//checkButton.svg');
   background-repeat: no-repeat;
   background-position: center left;
 }
 
 .todo-list li .toggle:checked+label {
-  background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2240%22%20height%3D%2240%22%20viewBox%3D%22-10%20-18%20100%20135%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2250%22%20fill%3D%22none%22%20stroke%3D%22%2359A193%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20fill%3D%22%233EA390%22%20d%3D%22M72%2025L42%2071%2027%2056l-4%204%2020%2020%2034-52z%22%2F%3E%3C%2Fsvg%3E');
+  background-image: url('./assets/checkedButton.svg');
 }
 
 .todo-list li label {
